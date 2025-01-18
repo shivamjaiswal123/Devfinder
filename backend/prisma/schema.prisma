@@ -14,7 +14,47 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
+  user_id       String    @id @default(uuid()) // Primary key (UUID)
+  email         String    @unique                        // User's email (unique)
+  username      String    @unique                        // User's username (unique)
+  password      String                                // Hashed password
+  status        String    @default("offline")          // User's current status (e.g., online/offline)
+  profile_photo String?                              // Optional profile photo URL
+  created_at    DateTime  @default(now())              // Timestamp when user was created
+  updated_at    DateTime  @updatedAt                   // Auto-updated on record update
+  deleted_at    DateTime?                              // Soft delete timestamp
+
+  rooms         Room[]                                 // Relation to rooms created by the user
+  chats         Chat[]                                 // Relation to chats sent by the user
 }
+
+model Room {
+  room_id      String    @id @default(uuid())  // Primary key (UUID)
+  user_id      String                          // Creator's user ID (FK), UUID type
+  name         String                                  // Room name
+  description  String?                                 // Optional description
+  visibility   String    @default("public")           // Room visibility (e.g., public/private)
+  github_link  String?                                // Optional GitHub link associated with the room
+  max_users    Int?                                   // Optional maximum user limit
+  tags         String[] @default([])                 // Tags associated with the room
+  created_at   DateTime  @default(now())              // Timestamp when the room was created
+  updated_at   DateTime  @updatedAt                   // Auto-updated on record update
+  deleted_at   DateTime?                              // Soft delete timestamp
+
+  user         User      @relation(fields: [user_id], references: [user_id]) // Relation to user
+  chats        Chat[]                                 // Relation to chats in the room
+}
+
+model Chat {
+  chat_id      String    @id @default(uuid()) // Primary key (UUID)
+  message      String                                 // Chat message
+  user_id      String                        // User ID (FK), UUID type
+  room_id      String?                       // Optional Room ID (FK) - null for private messages
+  created_at   DateTime  @default(now())              // Timestamp when chat was created
+  updated_at   DateTime?                              // Timestamp when chat was edited
+  deleted_at   DateTime?                              // Soft delete timestamp
+
+  user         User      @relation(fields: [user_id], references: [user_id]) // Relation to user
+  room         Room?     @relation(fields: [room_id], references: [room_id]) // Relation to room
+}
+
