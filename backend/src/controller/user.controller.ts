@@ -4,6 +4,8 @@ import { prisma } from "../config/prisma.config";
 import  bcrypt  from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+//Solve this issue in Cookies - Cross-Site Request Forgery
+
 function jwtToken(email: string){
     const token = jwt.sign(
         {
@@ -15,6 +17,109 @@ function jwtToken(email: string){
 
     return token;
 }
+
+export const update = async (req: Request, res: Response) => {
+    try {
+        const { user_id } = req.query;
+        const { email, username, status, profile_photo } = req.body;
+
+        if (!user_id) {
+            res.status(400).json({ message: 'User ID is required' });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { user_id: user_id as string },
+        });
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { username: username },
+                ],
+            },
+        });
+
+        if (existingUser && existingUser.user_id !== user.user_id) {
+            res.status(400).json({ message: 'Email or Username is already taken' });
+            return;
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { user_id: user.user_id },
+            data: {
+                email: email || user.email,
+                username: username || user.username,
+                status: status || user.status,
+                profile_photo: profile_photo || user.profile_photo,
+                updated_at: new Date(),
+            },
+        });
+
+        res.status(200).json({
+            message: 'User updated successfully!',
+            user: {
+                user_id: updatedUser.user_id,
+                email: updatedUser.email,
+                username: updatedUser.username,
+                status: updatedUser.status,
+                profile_photo: updatedUser.profile_photo,
+                created_at: updatedUser.created_at,
+                updated_at: updatedUser.updated_at,
+            },
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating user information', error });
+    }
+};
+
+export const get = async (req: Request, res: Response) => {
+    try {
+        const { user_id } = req.query;
+
+        if (!user_id) {
+            res.status(400).json({ message: 'User ID is required' });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { user_id: user_id as string },
+            select: {
+                user_id: true,
+                email: true,
+                username: true,
+                status: true,
+                profile_photo: true,
+                created_at: true,
+                updated_at: true,
+                deleted_at: true
+            },
+        });
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        if(user?.deleted_at!=null){
+            res.status(404).json({ message: 'This user account has been deleted.' });
+            return;
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error retrieving user information', error });
+    }
+};
 
 export const signup = async (req: Request, res: Response) => {
     try{
