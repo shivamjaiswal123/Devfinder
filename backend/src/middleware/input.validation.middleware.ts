@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const signupSchema = z.object({
   email: z.string().email(),
-  username: z.string().min(3,"Minimum length: 3"),
+  username: z.string().min(3,"Minimum length: 3").optional(),
   password: z.string().min(6,"Minimum length: 6"),
 });
 

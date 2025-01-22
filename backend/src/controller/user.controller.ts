@@ -6,10 +6,10 @@ import jwt from 'jsonwebtoken';
 
 //Solve this issue in Cookies - Cross-Site Request Forgery
 
-function jwtToken(email: string){
+function jwtToken(user_id: string){
     const token = jwt.sign(
         {
-            email
+            user_id
         },
         process.env.SECRET_KEY!!,
         { expiresIn: "1h" }
@@ -158,7 +158,7 @@ export const signup = async (req: Request, res: Response) => {
             }
         });
 
-        const token=jwtToken(email)
+        const token=jwtToken(newUser.user_id)
 
         //Status Code: 201 - Created
         res.status(201)
@@ -203,7 +203,7 @@ export const signin = async (req: Request, res: Response) => {
             return;
         }
 
-        const token=jwtToken(email);
+        const token=jwtToken(existingUser.user_id);
 
         //Status Code: 200 - Ok
         res.status(200)

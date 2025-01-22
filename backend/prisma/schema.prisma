@@ -58,3 +58,5 @@ model Chat {
   room         Room?     @relation(fields: [room_id], references: [room_id]) // Relation to room
 }
 
+
+
