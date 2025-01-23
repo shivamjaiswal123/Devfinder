@@ -1,23 +1,15 @@
 import WebSocket from 'ws';
 import { prisma } from '../config/prisma.config';
 
-export interface CreateRoomPayload {
-    user_id: string;          // User ID of the room creator
-    room_id: string;
-  }
+export const rooms = new Map<string, Set<WebSocket>>();
+export const users = new Map<WebSocket, Set<string>>();
 
-const rooms = new Map<string, Set<string>>();
-const users = new Map<string, Set<string>>();
-
-export const handle_room_ws = (ws: WebSocket, message: WebSocket.RawData) => {
+export const handle_room_ws = (ws: WebSocket, message: any) => {
   try {
     const data = JSON.parse(message.toString());
     const { type, payload } = data;
 
     switch (type) {
-
-      case 'create':
-        create(ws, payload);
 
       case 'join':
         join(ws, payload);
@@ -31,58 +23,13 @@ export const handle_room_ws = (ws: WebSocket, message: WebSocket.RawData) => {
         ws.send(JSON.stringify({ type: 'error', message: 'Unknown event type' }));
     }
   } catch (error) {
-    console.error('Error processing WebSocket message:', error);
+    console.error('Error in handling the room: ', error);
     ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
   }
 };
 
-const create = async (ws: WebSocket, payload: CreateRoomPayload) => {
-    const { user_id, room_id } = payload;
-   
-    try {
-
-        // Check if the room exists in the database
-        const room = await prisma.room.findUnique({
-            where: { room_id: room_id },
-        });
-
-        if (!room) {
-            ws.send(JSON.stringify({ type: 'error', message: `Room ${room_id} does not exist` }));
-            return;
-        }
-
-        //Check if user_id already presend in room_id
-        if(rooms.has(room_id)){
-            if(rooms.get(room_id)?.has(user_id)){
-                ws.send(JSON.stringify({ type: 'Already Present', message: `User ${user_id} already in the room ${room_id}` }));
-                return;
-            }
-        }
-  
-        // add in room - user map
-        if (!rooms.has(room_id)) {
-            rooms.set(room_id, new Set());
-        }
-        rooms.get(room_id)?.add(user_id);
-
-        // add in user - room map
-        if (!users.has(user_id)) {
-            users.set(user_id, new Set());
-        }
-        users.get(user_id)?.add(room_id);
-
-        ws.send(JSON.stringify({ type: 'roomJoined', message: `User ${user_id} has joined room ${room.room_id}` }));
-        console.log(`User ${user_id} joined room ${room_id}`);
-          
-      }
-      catch(e){
-          console.error('Error joining room:', e);
-          ws.send(JSON.stringify({ type: 'error', message: 'Error joining the room' }));
-      }   
-  };
-
-const join = async (ws: WebSocket, payload: CreateRoomPayload) => {
-  const { room_id, user_id } = payload;
+const join = async (ws: WebSocket, payload:  { room_id: string }) => {
+  const { room_id } = payload;
  
   try {
         // Check if the room exists in the database
@@ -92,23 +39,32 @@ const join = async (ws: WebSocket, payload: CreateRoomPayload) => {
 
         if (!room) {
             ws.send(JSON.stringify({ type: 'error', message: `Room ${room_id} does not exist` }));
+            ws.close(1008, 'Room does not exist');
             return;
+        }
+
+        //Check if user_id already presend in room_id
+        if(rooms.has(room_id)){
+            if(rooms.get(room_id)?.has(ws)){
+                ws.send(JSON.stringify({ type: 'Already Present', message: `User ${ws} already in the room ${room_id}` }));
+                return;
+            }
         }
 
         // add in room - user map
         if (!rooms.has(room_id)) {
             rooms.set(room_id, new Set());
         }
-        rooms.get(room_id)?.add(user_id);
+        rooms.get(room_id)?.add(ws);
 
         // add in user - room map
-        if (!users.has(user_id)) {
-            users.set(user_id, new Set());
+        if (!users.has(ws)) {
+            users.set(ws, new Set());
         }
-        users.get(user_id)?.add(room_id);
+        users.get(ws)?.add(room_id);
 
-        ws.send(JSON.stringify({ type: 'roomJoined', message: `User ${user_id} has joined room ${room_id}` }));
-        console.log(`User ${user_id} joined room ${room_id}`);
+        ws.send(JSON.stringify({ type: 'roomJoined', message: `User ${ws} has joined room ${room_id}` }));
+        console.log(`User ${ws} joined room ${room_id}`);
         
     }
     catch(e){

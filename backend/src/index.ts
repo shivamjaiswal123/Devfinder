@@ -1,13 +1,14 @@
 import { app  } from './app' 
 import { WebSocketServer } from 'ws'
 import { handle_room_ws } from './ws/room.ws.controller'
-import { handle_chat_ws } from './ws/chat.ws.controller'
+// import { handle_chat_ws } from './ws/chat.ws.controller'
 import jwt from "jsonwebtoken"
+import { handle_chat_ws } from './ws/chat.ws.controller'
 
 const PORT = process.env.PORT || 3000
 
 const http_server = app.listen(PORT, () => {
-    console.log(`Server started on port: ${PORT}`);
+    console.log(`HTTP Server started on port: ${PORT}`);
 })
 
 export const wss = new WebSocketServer({ server: http_server });
@@ -24,7 +25,7 @@ wss.on('connection', (ws,req) => {
     }
     
     try{
-        const decodedToken =jwt.verify(token, process.env.SECRET_KEY!!);
+        const decodedToken =jwt.verify(token, process.env.JWT_SECRET_KEY!!);
         console.log(decodedToken)
     }catch(e){
         console.log(e);

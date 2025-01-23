@@ -11,7 +11,7 @@ function jwtToken(user_id: string){
         {
             user_id
         },
-        process.env.SECRET_KEY!!,
+        process.env.JWT_SECRET_KEY!!,
         { expiresIn: "1h" }
     );
 
