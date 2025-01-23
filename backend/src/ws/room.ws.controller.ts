@@ -1,31 +1,17 @@
 import WebSocket from 'ws';
-import { prisma } from '../config/prisma.config';
 
-export const handle_room_ws = (ws: WebSocket, message: WebSocket.RawData) => {
+export const rooms = new Map<string, Set<WebSocket>>()
+
+export const handle_room_ws = (ws: WebSocket, payload: { room_id: string }) => {
   try {
-    const data = JSON.parse(message.toString());
-    const { type, payload } = data;
-
-    switch (type) {
-      case 'join':
-        join(ws, payload);
-        break;
-
-      default:
-        ws.send(JSON.stringify({ type: 'error', message: 'Unknown event type' }));
+    if(!rooms.has(payload.room_id)){
+      rooms.set(payload.room_id, new Set())
     }
+
+    rooms.get(payload.room_id)?.add(ws)
+
   } catch (error) {
-    console.error('Error processing WebSocket message:', error);
+    console.error('Error in handling the room: ', error);
     ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
   }
-};
-
-const join = async (ws: WebSocket, payload: any) => {
-  const { room_id, user_id } = payload;
-
-  // Logic for attaching the client to the room (e.g., store in-memory or DB)
-  console.log(`User ${user_id} is joining room ${room_id}`);
-
-  // Optionally, send a confirmation back to the client
-  ws.send(JSON.stringify({ type: 'roomJoined', message: `Joined room ${room_id}` }));
-};
+}
