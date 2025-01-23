@@ -28,6 +28,6 @@ export const create = async ( req : Request, res : Response) => {
         }catch(e){
             console.error(e);
             //Status Code: 500 - Internal Server Error
-            res.status(500).json({ message: "Error creating user", error: e });
+            res.status(500).json({ message: "Error creating room", error: e });
         }
 }

@@ -1,9 +1,8 @@
-import 'dotenv/config'
 import { app  } from './app' 
 import { WebSocketServer } from 'ws'
 import { handle_room_ws } from './ws/room.ws.controller'
 import { handle_chat_ws } from './ws/chat.ws.controller'
-
+import jwt from "jsonwebtoken"
 
 const PORT = process.env.PORT || 3000
 
@@ -16,6 +15,23 @@ export const wss = new WebSocketServer({ server: http_server });
 wss.on('connection', (ws,req) => {
     console.log('A client connected.');
     console.log(`Conn Url ${req.url}`);
+    const token = req.headers.cookie;
+    console.log("cookies ",token)
+    if (!token) {
+        ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized: No cookies provided' }));
+        ws.close(1008, 'Unauthorized');
+        return;
+    }
+    
+    try{
+        const decodedToken =jwt.verify(token, process.env.SECRET_KEY!!);
+        console.log(decodedToken)
+    }catch(e){
+        console.log(e);
+        ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized: Wrong Cookies' }));
+        ws.close(1008, 'Unauthorized');
+    } 
+
     // Handle incoming messages
     ws.on('message', (message) => {
         console.log('Received:', message.toString());
