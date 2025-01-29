@@ -1,5 +1,5 @@
 import { WebSocketServer } from "ws";
-import { handle_room_ws, rooms } from "./room.ws.controller";
+import { handle_room_ws } from "./room.ws.controller";
 import { handle_chat_ws } from "./chat.ws.controller";
 import jwt from "jsonwebtoken"
 

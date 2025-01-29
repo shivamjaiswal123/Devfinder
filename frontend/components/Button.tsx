@@ -2,6 +2,8 @@ interface ButtonProps {
   label: string;
   variant: 'primary' | 'secondary';
   size: 'sm' | 'md' | 'lg';
+  onClick?: () => void | Promise<void>;
+  disabled?: boolean; 
 }
 
 const buttonVariant = {
@@ -17,10 +19,12 @@ const buttonSize = {
 
 const defaultStyle = 'rounded-md font-medium text-sm';
 
-function Button({ label, variant, size }: ButtonProps) {
+function Button({ label, variant, size, onClick, disabled=false  }: ButtonProps) {
   return (
     <button
       className={`${buttonVariant[variant]} ${buttonSize[size]} ${defaultStyle}`}
+      onClick={onClick}
+      disabled={disabled}
     >
       {label}
     </button>
